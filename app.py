@@ -121,7 +121,7 @@ ctx = webrtc_streamer(
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
     }),
     media_stream_constraints={
-        "video": {"width": 640, "height": 480},
+        "video": {"width": 1280, "height": 720},
         "audio": False
     },
     async_processing=True

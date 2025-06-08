@@ -7,7 +7,7 @@ def preload_assets(asset_dir: str = "assets") -> dict:
     pygame.mixer.init()
     assets = {}
     fruit_types = ["apple", "banana", "orange", "bomb"]
-    target_size = (40, 40)
+    target_size = (60, 60)
 
     for ft in fruit_types:
         path = os.path.join(asset_dir, f"{ft}.png")

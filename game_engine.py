@@ -27,9 +27,12 @@ class GameEngine:
 
     def spawn_fruit(self) -> None:
         current_time = time.time()
+        # Count only unsliced fruits for spawning limit
+        unsliced_count = sum(1 for fruit in self.fruits if not fruit.sliced)
+        
         if (current_time - self.last_spawn > random.uniform(0.2, 0.8) and 
             not self.game_over and 
-            len(self.fruits) < 8):
+            unsliced_count < 5):  # Changed to only count unsliced fruits
             
             t = random.random()
             fruit_type = 'bomb' if t < 0.1 else random.choice(['apple', 'banana', 'orange'])
@@ -59,12 +62,20 @@ class GameEngine:
         self.spawn_fruit()
         for fruit in self.fruits[:]:
             fruit.update()
-            if fruit.y > self.height + 100:
+            # Remove fruits that are off-screen and their pieces are also off-screen
+            if fruit.sliced:
+                pieces_off_screen = all(
+                    piece['y'] > self.height + 100 
+                    for piece in fruit.sliced_pieces
+                )
+                if pieces_off_screen:
+                    self.fruits.remove(fruit)
+            elif fruit.y > self.height + 100:
                 self.fruits.remove(fruit)
-                if not fruit.sliced:
-                    self.missed += 1
-                    if self.missed >= self.max_missed:
-                        self.game_over = True
+                self.missed += 1
+                if self.missed >= self.max_missed:
+                    self.game_over = True
+            
             if fingertip and slicing and not fruit.sliced:
                 if fruit.check_collision(fingertip):
                     fruit.slice()
