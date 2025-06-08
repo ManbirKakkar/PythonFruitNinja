@@ -40,7 +40,7 @@ class GameEngine:
         self.last_frame = frame.copy()
         
         current_time = time.time()
-        if current_time - self.last_hand_process > 0.05:  # Higher frequency
+        if current_time - self.last_hand_process > 0.05:
             self.hand_tracker.process(frame)
             self.last_hand_process = current_time
             

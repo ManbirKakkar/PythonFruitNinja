@@ -18,8 +18,8 @@ class Fruit:
         self.x = random.randint(self.width // 2, w - self.width // 2)
         self.y = h
         self.vx = random.uniform(-3, 3)
-        self.vy = random.uniform(-12, -8)  # Increased upward velocity
-        self.gravity = 0.4  # Increased gravity
+        self.vy = random.uniform(-18, -14)  # Increased upward velocity for higher flight
+        self.gravity = 0.35
         self.sliced = False
         self.sliced_pieces: List[Dict] = []
         self.sliced_time: float = 0.0
@@ -37,7 +37,6 @@ class Fruit:
 
     def check_collision(self, point: Tuple[int, int]) -> bool:
         px, py = point
-        # Larger collision area (1.5x)
         return (abs(px - self.x) < self.width//3 and 
                 abs(py - self.y) < self.height//3)
 
@@ -49,9 +48,9 @@ class Fruit:
         
         self.sliced_pieces = [
             {'image': self.image[:, :self.width//2], 
-             'x': self.x, 'y': self.y, 'vx': -4, 'vy': self.vy},
+             'x': self.x, 'y': self.y, 'vx': -5, 'vy': self.vy},
             {'image': self.image[:, self.width//2:], 
-             'x': self.x, 'y': self.y, 'vx': 4, 'vy': self.vy}
+             'x': self.x, 'y': self.y, 'vx': 5, 'vy': self.vy}
         ]
 
     def draw(self, frame: np.ndarray) -> None:
@@ -95,4 +94,5 @@ class Fruit:
             for c in range(0, 3):
                 roi[:, :, c] = (a * color[:, :, c] + 
                                (1 - a) * roi[:, :, c])
-       
+        else:
+            roi[:] = img_cropped[:, :, :3]

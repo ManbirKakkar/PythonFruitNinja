@@ -7,6 +7,7 @@ import av
 import time
 import queue
 import logging
+from streamlit.components.v1 import html
 
 from utils import preload_assets
 from game_engine import GameEngine
@@ -30,7 +31,6 @@ class VideoTransformer(VideoTransformerBase):
         engine = None
         while True:
             try:
-                # Handle reset event
                 if self.reset_event.is_set():
                     with self.thread_lock:
                         engine = None
@@ -63,7 +63,7 @@ class VideoTransformer(VideoTransformerBase):
             img = frame.to_ndarray(format="bgr24")
             img = cv2.flip(img, 1)
             
-            # Put frame in queue for game thread (skip every other frame)
+            # Put frame in queue for game thread
             if self.frame_count % 2 == 0 and not self.frame_queue.full():
                 self.frame_queue.put(img.copy())
             
@@ -79,9 +79,40 @@ class VideoTransformer(VideoTransformerBase):
             logger.error(f"Video processing error: {str(e)}")
             return frame
 
+# JavaScript for fullscreen functionality
+fullscreen_js = """
+<script>
+function toggleFullscreen() {
+    const element = document.querySelector('section.main');
+    
+    if (!document.fullscreenElement) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) { /* Safari */
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { /* IE11 */
+            element.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+    }
+}
+</script>
+"""
+
 # Streamlit UI
 st.set_page_config(page_title="🎯 Fruit Ninja", layout="wide")
 st.title("🎯 Real-Time Fruit Ninja")
+
+# Fullscreen button
+st.markdown(fullscreen_js, unsafe_allow_html=True)
+st.button("⛶ Full Screen", on_click=lambda: html(fullscreen_js), key="fullscreen")
 
 ctx = webrtc_streamer(
     key="fruit-ninja",
