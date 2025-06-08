@@ -23,15 +23,13 @@ class GameEngine:
         self.started = False
         self.last_update_time = time.time()
         self.last_hand_process = 0
-        # Initialize last_frame with black screen
         self.last_frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-        self.last_hand_process = 0
 
     def spawn_fruit(self) -> None:
         current_time = time.time()
-        if (current_time - self.last_spawn > random.uniform(0.5, 1.5) 
-            and not self.game_over 
-            and len(self.fruits) < 5):
+        if (current_time - self.last_spawn > random.uniform(0.2, 0.8) and 
+            not self.game_over and 
+            len(self.fruits) < 8):
             
             t = random.random()
             fruit_type = 'bomb' if t < 0.1 else random.choice(['apple', 'banana', 'orange'])
@@ -39,12 +37,10 @@ class GameEngine:
             self.last_spawn = current_time
 
     def update(self, frame: np.ndarray) -> None:
-        # Start with clean frame
         self.last_frame = frame.copy()
         
-        # Process hands at low frequency
         current_time = time.time()
-        if current_time - self.last_hand_process > 0.1:
+        if current_time - self.last_hand_process > 0.05:  # Higher frequency
             self.hand_tracker.process(frame)
             self.last_hand_process = current_time
             
@@ -63,14 +59,12 @@ class GameEngine:
         self.spawn_fruit()
         for fruit in self.fruits[:]:
             fruit.update()
-            # Remove off-screen
             if fruit.y > self.height + 100:
                 self.fruits.remove(fruit)
                 if not fruit.sliced:
                     self.missed += 1
                     if self.missed >= self.max_missed:
                         self.game_over = True
-            # Handle slicing
             if fingertip and slicing and not fruit.sliced:
                 if fruit.check_collision(fingertip):
                     fruit.slice()
@@ -92,15 +86,14 @@ class GameEngine:
                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,255), 3)
 
     def draw_game(self) -> None:
-        # Draw fruits with proper alpha blending
         for fruit in self.fruits:
             fruit.draw(self.last_frame)
         
-        # UI Overlays
         cv2.putText(self.last_frame, f"Score: {self.score}", (20, 50), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
         cv2.putText(self.last_frame, f"Missed: {self.missed}/{self.max_missed}", (20, 90), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
-        elapsed = int(time.time() - self.started_time)
-        cv2.putText(self.last_frame, f"Time: {elapsed}s", (20, 130), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+        if self.started:
+            elapsed = int(time.time() - self.started_time)
+            cv2.putText(self.last_frame, f"Time: {elapsed}s", (20, 130), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)

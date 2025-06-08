@@ -1,8 +1,8 @@
 streamlit
 streamlit-webrtc
-opencv-python
-mediapipe
+opencv-python-headless==4.5.5.64
+mediapipe==0.10.0
 numpy
 pillow
-pygame
+pygame==2.1.3
 av

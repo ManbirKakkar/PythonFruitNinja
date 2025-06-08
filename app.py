@@ -18,10 +18,10 @@ class VideoTransformer(VideoTransformerBase):
     def __init__(self):
         self.engine = None
         self.frame_count = 0
-        self.frame_queue = queue.Queue(maxsize=2)  # Per-instance queue
+        self.frame_queue = queue.Queue(maxsize=2)
         self.thread_lock = threading.Lock()
+        self.reset_event = threading.Event()
         
-        # Start game thread for this transformer
         self.game_thread = threading.Thread(target=self._game_thread, daemon=True)
         self.game_thread.start()
 
@@ -30,6 +30,14 @@ class VideoTransformer(VideoTransformerBase):
         engine = None
         while True:
             try:
+                # Handle reset event
+                if self.reset_event.is_set():
+                    with self.thread_lock:
+                        engine = None
+                        self.engine = None
+                    self.frame_queue.queue.clear()
+                    self.reset_event.clear()
+                    
                 if self.frame_queue.empty():
                     time.sleep(0.01)
                     continue
@@ -39,7 +47,7 @@ class VideoTransformer(VideoTransformerBase):
                     if not engine:
                         h, w, _ = frame.shape
                         engine = GameEngine((w, h), ASSETS)
-                        self.engine = engine  # Set reference for recv
+                        self.engine = engine
                     
                     # Process at 30 FPS max
                     current_time = time.time()
@@ -55,14 +63,14 @@ class VideoTransformer(VideoTransformerBase):
             img = frame.to_ndarray(format="bgr24")
             img = cv2.flip(img, 1)
             
-            # Put frame in queue for game thread
-            if not self.frame_queue.full():
+            # Put frame in queue for game thread (skip every other frame)
+            if self.frame_count % 2 == 0 and not self.frame_queue.full():
                 self.frame_queue.put(img.copy())
             
             # Draw game state
-            if self.engine and not self.engine.game_over:
+            if self.engine:
                 with self.thread_lock:
-                    if self.engine and hasattr(self.engine, 'last_frame'):
+                    if hasattr(self.engine, 'last_frame'):
                         img = self.engine.last_frame.copy()
             
             self.frame_count += 1
@@ -89,9 +97,8 @@ ctx = webrtc_streamer(
 )
 
 def reset_game():
-    with game_lock:
-        frame_queue.queue.clear()
-        # Recreate engine in game thread
+    if ctx.video_transformer:
+        ctx.video_transformer.reset_event.set()
 
 with st.sidebar:
     st.header("How to Play")
